@@ -1,0 +1,8 @@
+.DS_Store
+*.log
+# never commit secrets, even if they land in configs/
+hosts.yml
+id_*
+*.pem
+*history*
+automatic_backups/
