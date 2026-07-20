@@ -22,15 +22,17 @@ Don't fork on GitHub — forks of public repos can't be made private. Instead,
 clone and point `origin` at your own private repo, keeping the engine as `upstream`:
 
 ```bash
-git clone https://github.com/vladforfutdinov/mac-bootstrap.git ~/mac-backup
+curl -fsSL https://raw.githubusercontent.com/vladforfutdinov/mac-bootstrap/main/init.sh \
+  | bash -s -- my-mac-backup            # or: wget -qO- <same url> | bash -s -- my-mac-backup
 cd ~/mac-backup
-./init.sh my-mac-backup    # wires remotes (origin = your private repo via gh) + first snapshot
 git add -A && git commit -m "first snapshot" && git push -u origin main
 ```
 
-`./init.sh` takes a repo name (created private via `gh`) or an existing git URL;
-it never commits or pushes — you review the first snapshot first. The manual
-equivalent:
+One line: clones the engine to `~/mac-backup` (second arg overrides), wires
+remotes (`origin` = your private repo — created via `gh` for a bare name, or an
+existing git URL), runs the first snapshot. Never commits or pushes — you review
+the triage + secret scan first. From an existing clone the same script is just
+`./init.sh my-mac-backup`. The manual equivalent:
 
 ```bash
 git remote rename origin upstream

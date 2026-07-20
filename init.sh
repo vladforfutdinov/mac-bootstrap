@@ -1,19 +1,32 @@
 #!/usr/bin/env bash
 # One-command setup of a private backup repo on top of the public engine.
-# Automates the README "Setup" section. Run from a fresh clone of the engine:
+# Automates the README "Setup" section. Two ways to run:
+#
+#   curl -fsSL https://raw.githubusercontent.com/vladforfutdinov/mac-bootstrap/main/init.sh \
+#     | bash -s -- [repo-name-or-url] [target-dir]
 #
 #   git clone https://github.com/vladforfutdinov/mac-bootstrap.git ~/mac-backup
 #   cd ~/mac-backup && ./init.sh [repo-name-or-url]
 #
-# arg: your PRIVATE repo — a git URL to wire as origin, or a bare name for
-#      `gh repo create <name> --private` (default: mac-backup). Without gh and
-#      without a URL it leaves origin unset and tells you what to do.
+# arg 1: your PRIVATE repo — a git URL to wire as origin, or a bare name for
+#        `gh repo create <name> --private` (default: mac-backup). Without gh and
+#        without a URL it leaves origin unset and tells you what to do.
+# arg 2 (curl mode only): where to clone the engine (default: ~/mac-backup).
 # Never pushes and never commits — you review the first snapshot, then commit.
 set -euo pipefail
-cd "$(dirname "$0")" || exit 1
 say() { printf '\n\033[1m== %s\033[0m\n' "$*"; }
 
-[ -d .git ] || { echo "not a git clone — clone the engine first (see README Setup)"; exit 1; }
+# curl/wget mode: no engine checkout around this script -> clone one, continue there.
+ENGINE_URL="${ENGINE_URL:-https://github.com/vladforfutdinov/mac-bootstrap.git}"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]:-.}")" 2>/dev/null && pwd || true)"
+if [ ! -f "$script_dir/snapshot.sh" ] || [ ! -d "$script_dir/.git" ]; then
+  dir="${2:-$HOME/mac-backup}"
+  [ -e "$dir" ] && { echo "target $dir already exists — move it away or pass another dir"; exit 1; }
+  say "clone engine -> $dir"
+  git clone "$ENGINE_URL" "$dir"
+  exec "$dir/init.sh" "${1:-}"
+fi
+cd "$script_dir" || exit 1
 
 say "remotes"
 if git remote get-url upstream >/dev/null 2>&1; then
