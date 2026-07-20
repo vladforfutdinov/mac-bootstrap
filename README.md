@@ -109,6 +109,11 @@ First run creates the data-file skeleton (maps, ignore lists, defaults template)
 - **`manifests/custom.map`** — `label|shell command`, run as the last restore
   section. Anything machine-setup that doesn't fit the other layers (e.g. clone
   and bootstrap another config repo).
+- **`manifests/snapshot.map`** — `label|shell command`, the snapshot-side twin:
+  runs before the secret scan and copies IN state the generic sections can't
+  see (another tool's config tree → a repo subdir). Whatever it writes gets
+  committed — keep secrets out; the built-in scan only covers `dotfiles/` and
+  `configs/`.
 - **`configs/plists.map`** — one bundle-id per line: which app preferences to back
   up. Helper domains that aren't app bundles verify against their parent app via
   `domain|check=<parent-bundle-id>`. Deliberately rejected domains go to

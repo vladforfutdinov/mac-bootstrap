@@ -41,6 +41,13 @@ EOF
 # label|shell command — custom restore steps, run as the last section.
 # Example: clone another config repo, bootstrap an editor, etc.
 EOF
+[ -f manifests/snapshot.map ] || cat > manifests/snapshot.map <<'EOF'
+# label|shell command — custom snapshot steps, run before the secret scan.
+# cwd = repo root. Copy IN state the generic sections can't see (other tools'
+# config trees). Whatever you write here gets committed — keep secrets out;
+# the built-in secret scan only covers dotfiles/ and configs/.
+# Example: editor config|rsync -a --delete "$HOME/.someeditor/config/" someeditor/
+EOF
 [ -f defaults/defaults.sh ] || cat > defaults/defaults.sh <<'EOF'
 #!/usr/bin/env bash
 # Curated macOS settings. Uncomment / add what you actually use.
@@ -255,6 +262,16 @@ for app in /Applications/*.app "$HOME/Applications"/*.app; do
   echo "$name  →  brew search --cask '$guess'  # → Brewfile.extra, or installers.map, or apps-ignore.txt" >> manifests/apps-untracked.txt
 done
 echo "  $(wc -l < manifests/apps-untracked.txt | tr -d ' ') candidates for manual triage"
+
+if [ -f manifests/snapshot.map ] && grep -qvE '^(#|$)' manifests/snapshot.map; then
+  say "custom snapshot steps (manifests/snapshot.map)"
+  while IFS='|' read -r label cmd; do
+    case "$label" in ''|\#*) continue ;; esac
+    [ -n "$cmd" ] || continue
+    echo "  → $label"
+    ( eval "$cmd" ) || echo "  ~ failed: $label"
+  done < manifests/snapshot.map
+fi
 
 say "secret scan (warn-only)"
 if grep -rInE '(api[_-]?key|secret|token|passw)[a-z_]*[[:space:]]*[=:][[:space:]]*[^[:space:]$]' dotfiles configs 2>/dev/null | grep -v '\.map:'; then
